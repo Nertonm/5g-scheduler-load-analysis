@@ -1,0 +1,29 @@
+# Dependências do ambiente Sionna 
+
+# Motor de simulação
+sionna==2.0.1
+
+# Stack científica
+# numpy: arrays/tensores, base de todos os cálculos dos schedulers
+numpy
+# pandas: DataFrames dos resultados por (scheduler, carga, seed), base da EDA
+pandas
+# scipy: distribuições, testes estatísticos 
+scipy
+
+# Visualização
+# matplotlib: figuras base (curvas, CDFs)
+matplotlib
+# seaborn: gráficos estatísticos da EDA (boxplots, heatmaps, facetas)
+seaborn
+
+# Jupyter
+jupyterlab
+# ipykernel: kernel Python para os notebooks
+ipykernel
+
+# Utilidades
+# tqdm: barra de progresso das simulações
+tqdm
+# pytest: smoke tests e validação (make test)
+pytest

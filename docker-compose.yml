@@ -1,0 +1,46 @@
+# Orquestração do ambiente Sionna 
+#
+# Uso:
+#   make build   -> constrói a imagem
+#   make up      -> sobe o container
+#   make shell   -> entra no bash do container
+#   make test    -> roda os smoke tests dentro do container
+#   make jupyter -> sobe Jupyter Lab na porta 8888
+#   make down    -> derruba o container
+
+services:
+  sionna:
+    # Constrói a imagem a partir do Dockerfile do repo (CPU-only).
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: 5g-scheduler-sionna:latest
+    container_name: 5g-scheduler-sionna
+
+    environment:
+      # TF_CPP_MIN_LOG_LEVEL=2: silencia logs INFO/WARNING do TensorFlow
+      # (o Sionna usa TF internamente; sem isso o output fica poluído).
+      - TF_CPP_MIN_LOG_LEVEL=2
+      # SIONNA_LOG_LEVEL=WARNING: só mostra avisos/erros do Sionna.
+      - SIONNA_LOG_LEVEL=WARNING
+
+    working_dir: /workspace
+
+    volumes:
+      # Monta o repo do host no container: editar no host = editar no container.
+      - .:/workspace
+      # results/ é montado explicitamente (mesmo que já esteja em .) para
+      # deixar claro onde os dados de simulação são gravados e persistidos.
+      - ./results:/workspace/results
+
+    ports:
+      # Jupyter Lab acessível do host em http://localhost:8888
+      - "8888:8888"
+
+    command: ["bash"]
+    # stdin_open+tty: mantém o container vivo e interativo (make shell).
+    stdin_open: true
+    tty: true
+    # shm_size: 2g. O Sionna/TF usa memória compartilhada (/dev/shm) para
+    # comunicação entre processos; o default de 64MB causa OOM em simulação.
+    shm_size: "2g"

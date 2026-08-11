@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Ambiente
+.env
+venv/
+.venv/
+
+# Resultados (manter estrutura, ignorar dados grandes)
+results/*.csv
+results/*.json
+results/*.npy
+results/*.png
+results/*.pdf
+
+# IDE
+.vscode/
+.idea/
+
+# Sistema
+.DS_Store
+Thumbs.db
