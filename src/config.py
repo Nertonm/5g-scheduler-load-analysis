@@ -34,7 +34,7 @@ class Config:
     # realizações instantâneas favoráveis do fading; RR ignora o canal; PF
     # combina taxa instantânea e histórico. Assim, os resultados não devem
     # ser interpretados como avaliação de justiça entre UEs near/far ou de
-    # cobertura espacial. Modelos com path loss/3GPP são extensãos possíveis, 
+    # cobertura espacial. Modelos com path loss/3GPP são extensões possíveis,
     # mas não parte deste desenho causal controlado.
     cell_radius_m: float = 500.0
 
@@ -71,11 +71,12 @@ class Config:
     # num_prbs: Physical Resource Blocks. 52 PRBs em 20 MHz com 30 kHz de
     # subcarrier. É a unidade de alocação que os schedulers disputam a cada TTI.
     #
-    # ORIGEM NORMATIVA: TS 38.101-1, seção 5.3.2, tabela de channel bandwidth.
-    # Para 20 MHz @ 30 kHz SCS o máximo utilizável é 52 PRBs (contra ~55,5
-    # brutos: 20 MHz / 30 kHz / 12 subcarriers por PRB). A diferença é guard
-    # band nas bordas: 52 PRBs x 12 x 30 kHz = 18,72 MHz ocupados, ~1,28 MHz
-    # de guarda. O checkpoint já trazia o valor; o config reproduz o normativo.
+    # VALOR: 52 PRBs é decisão de desenho alinhada ao TAREFAS e ao checkpoint
+    # do projeto (o tutorial Scheduling do Sionna usa a mesma ordem de grandeza).
+    # A TS 38.101-1, Tabela 5.3.2-1, lista 51 PRBs para 20 MHz @ 30 kHz SCS
+    # (52 PRBs é a configuração de 10 MHz @ 15 kHz); a diferença de 1 PRB não
+    # altera a comparação relativa entre schedulers (objetivo do projeto).
+    # Banda ocupada: 52 x 12 x 30 kHz = 18,72 MHz; o restante até 20 MHz é guard band.
     num_prbs: int = 52
 
     # subcarrier_spacing_hz: espaçamento entre subportadoras (Hz). 30 kHz é a
@@ -111,6 +112,19 @@ class Config:
     # para isolar o efeito do scheduler.
     traffic: str = "full_buffer"
 
+    # snr_db: SNR média de referência por UE (dB), por construção do cenário.
+    # Sem path loss, E[|h|^2]=1 para todos os UEs, logo E[SNR_u] = ref_linear
+    # é idêntica para todo UE. A posição (cell_radius_m) não é fonte de
+    # heterogeneidade. O valor define a escala absoluta de throughput
+    # (Shannon com cap), não a ordenação relativa entre schedulers.
+    snr_db: float = 10.0
+
+    # max_spectral_efficiency: cap de eficiência espectral (bit/s/Hz) no
+    # mapeamento Shannon. Modela MCS finito (sem tabela TS 38.214 no card 1,
+    # decisão documentada) e evita caudas pesadas de log2(1+SNR) em SNR alta.
+    # 6.0 bit/s/Hz é um teto típico de 64-QAM com code rate ~1 (5G NR).
+    max_spectral_efficiency: float = 6.0
+
     # Schedulers: as três políticas comparadas.
     schedulers: list[str] = field(
         default_factory=lambda: ["round_robin", "max_c_i", "proportional_fair"]
@@ -120,7 +134,7 @@ class Config:
     # PF escolhe u = argmax(taxa_instantanea / media_historica), e a média é
     # atualizada como T_t = beta*T_{t-1} + (1-beta)*R_t. beta próximo de 1 =
     # média de longo prazo (PF mais estável). Default Sionna: 0.98. Este valor
-    # deve vai ser declarado no relatório, pois muda JFI e throughput (viés de
+    # deve ser declarado no relatório, pois muda JFI e throughput (viés de
     # implementação).
     pf_beta: float = 0.98
 

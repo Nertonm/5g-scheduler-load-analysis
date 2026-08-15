@@ -1,4 +1,4 @@
-# Orquestração do ambiente Sionna 
+# Orquestração do ambiente Sionna
 #
 # Uso:
 #   make build   -> constrói a imagem
@@ -18,9 +18,6 @@ services:
     container_name: 5g-scheduler-sionna
 
     environment:
-      # TF_CPP_MIN_LOG_LEVEL=2: silencia logs INFO/WARNING do TensorFlow
-      # (o Sionna usa TF internamente; sem isso o output fica poluído).
-      - TF_CPP_MIN_LOG_LEVEL=2
       # SIONNA_LOG_LEVEL=WARNING: só mostra avisos/erros do Sionna.
       - SIONNA_LOG_LEVEL=WARNING
 
