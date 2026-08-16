@@ -35,6 +35,7 @@ import pandas as pd
 
 from .channel import compute_rates, generate_channel
 from .config import Config, load_config
+from .schedulers import create_scheduler
 
 
 # Scheduler vazio (card 1), embutido aqui para não invadir o escopo dos
@@ -82,7 +83,7 @@ def run_seed_on_rates(
     rates: [num_ttis, carga] float64 (bit/s). Scheduler vazio no card 1.
     """
     num_ues = carga
-    sched = EmptyScheduler(num_ues=num_ues)
+    sched = create_scheduler(name, num_ues)
     bits = np.zeros(num_ues, dtype=np.float64)
     slots = np.zeros(num_ues, dtype=np.int64)
 
@@ -163,9 +164,9 @@ def run(
     # Card 1 só implementa o scheduler vazio. Rejeitar nomes reais evita
     # gerar CSVs round_robin__... com zeros que pareceriam resultado.
     for name in names:
-        if name != "empty":
+        if name not in ["empty", "max_c_i"]:
             raise NotImplementedError(
-                f"scheduler {name!r} não implementado no card 1; use 'empty'"
+                f"scheduler {name!r} não implementado no card 3; use 'max_c_i' ou 'empty'."
             )
 
     started = time.time()
