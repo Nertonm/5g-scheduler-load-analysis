@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 
 
@@ -222,11 +224,7 @@ class RoundRobin:
 
         # Round Robin não atualiza nenhum estado baseado na taxa.
         pass
-"""Implementação dos schedulers (Card 3: Max C/I)"""
 
-
-from __future__ import annotations
-import numpy as np
 
 class MaxCIScheduler:
     """Scheduler Max C/I (Maximum Carrier-to-Interference / Best Channel).
@@ -238,7 +236,9 @@ class MaxCIScheduler:
     """
 
     def __init__(self, num_ues: int) -> None:
-       self.num_ues = num_ues
+        if num_ues <= 0:
+            raise ValueError("num_ues deve ser maior que zero.")
+        self.num_ues = num_ues
     
     def select(self, tti: int, rates: np.ndarray) -> int:
         """Seleciona o UE com a maior taxa instantânea no TTI t.
@@ -246,9 +246,15 @@ class MaxCIScheduler:
         rates: [num_ues] float, taxa instantânea realizável de cada UE no TTI.
         Retorna o índice (0 .. num_ues - 1) do UE com maior taxa.
         """
-        if len(rates) == 0:
-            return -1
-        #u(t) = argmax_i r_i(t)
+        rates = np.asarray(rates)
+
+        if rates.shape != (self.num_ues,):
+            raise ValueError(
+                f"rates deve possuir shape ({self.num_ues},), "
+                f"mas recebeu {rates.shape}."
+            )
+
+        # u(t) = argmax_i r_i(t)
         return int(np.argmax(rates))    
     
     def update(self, tti: int, ue: int, rate: float) -> None:
@@ -259,12 +265,33 @@ class MaxCIScheduler:
         """
         pass
     
-def create_scheduler(name: str, num_ues: int):
+def create_scheduler(name: str, num_ues: int, **kwargs):
+    """Factory dos schedulers.
+
+    Mapeia o nome do scheduler (mesmo formato do config) para a classe
+    correspondente. Contrato comum:
+        select(tti, rates) -> int
+        update(tti, ue, rate) -> None
+
+    Parameters
+    ----------
+    name : str
+        Nome do scheduler: "empty", "round_robin", "max_c_i" ou
+        "proportional_fair".
+    num_ues : int
+        Numero de UEs do cenario.
+    **kwargs
+        Parametros extras, ex.: beta para o ProportionalFair.
+    """
     if name == "empty":
-        # Import local ou definição da EmptyScheduler
+        # Import local para evitar ciclo (EmptyScheduler vive em simulation).
         from src.simulation import EmptyScheduler
         return EmptyScheduler(num_ues)
+    elif name == "round_robin":
+        return RoundRobin(num_ues)
     elif name == "max_c_i":
         return MaxCIScheduler(num_ues)
+    elif name == "proportional_fair":
+        return ProportionalFair(num_ues, beta=kwargs.get("beta", 0.98))
     else:
         raise NotImplementedError(f"Scheduler '{name}' não implementado.")

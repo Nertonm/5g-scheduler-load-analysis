@@ -16,7 +16,7 @@ sem refatoração:
             \"\"\"Hook pós-alocação (PF atualiza média com a taxa alcançada;
             RR e Max C/I: no-op).\"\"\"
 
-O registry ``create_scheduler(name, cfg, num_ues)`` vive nos cards 2-4.
+O registry ``create_scheduler(name, num_ues)`` vive nos cards 2-4.
 
 Loop: carga -> seed -> canal (uma vez por (carga, seed)) -> scheduler -> TTI.
 O canal gerado uma vez e compartilhado entre schedulers garante pareamento
