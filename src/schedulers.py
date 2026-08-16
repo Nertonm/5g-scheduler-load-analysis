@@ -136,6 +136,92 @@ class ProportionalFair:
             self.beta * self.t_hist
             + (1.0 - self.beta) * r_t
         )
+
+
+class RoundRobin:
+    """
+    Scheduler Round Robin (RR).
+
+    A cada TTI, o recurso é atribuído ao próximo UE em ordem cíclica:
+
+        UE0 → UE1 → UE2 → ... → UEn → UE0
+
+    Essa implementação segue o contrato definido em src/simulation.py:
+        select(tti, rates) -> int
+        update(tti, ue, rate) -> None
+    """
+
+    def __init__(self, num_ues: int):
+        """
+        Inicializa o scheduler Round Robin.
+
+        Parameters
+        ----------
+        num_ues : int
+            Número de User Equipments.
+        """
+
+        if num_ues <= 0:
+            raise ValueError("num_ues deve ser maior que zero.")
+
+        self.num_ues = num_ues
+
+        # Índice do próximo UE a ser escalonado
+        self.current = 0
+
+    def select(self, tti: int, rates: np.ndarray) -> int:
+        """
+        Seleciona o próximo UE em ordem circular.
+
+        Parameters
+        ----------
+        tti : int
+            Índice do TTI atual (não utilizado).
+
+        rates : np.ndarray
+            Vetor de taxas instantâneas.
+            É validado apenas para manter compatibilidade com a interface.
+
+        Returns
+        -------
+        int
+            Índice do UE selecionado.
+        """
+
+        rates = np.asarray(rates)
+
+        if rates.shape != (self.num_ues,):
+            raise ValueError(
+                f"rates deve possuir shape ({self.num_ues},), "
+                f"mas recebeu {rates.shape}."
+            )
+
+        ue = self.current
+        self.current = (self.current + 1) % self.num_ues
+
+        return ue
+
+    def update(self, tti: int, ue: int, rate: float) -> None:
+        """
+        Atualização do estado.
+
+        No Round Robin não há histórico nem métricas a atualizar.
+        O método existe apenas para manter a mesma interface dos
+        demais schedulers.
+        """
+
+        if not 0 <= ue < self.num_ues:
+            raise ValueError(
+                f"ue deve estar entre 0 e {self.num_ues - 1}."
+            )
+
+        if not np.isfinite(rate) or rate < 0:
+            raise ValueError(
+                "rate deve ser um número finito e não-negativo."
+            )
+
+        # Round Robin não atualiza nenhum estado baseado na taxa.
+        pass
 """Implementação dos schedulers (Card 3: Max C/I)"""
 
 
