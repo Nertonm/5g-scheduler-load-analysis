@@ -17,6 +17,12 @@ matplotlib
 # seaborn: gráficos estatísticos da EDA (boxplots, heatmaps, facetas)
 seaborn
 
+# Modelos estatísticos                                                                                                             
+# statsmodels: regressão logística e análise estatística avançada                                                                  
+statsmodels                                                                                                                        
+# scikit-learn: machine learning e métricas de apoio                                                                               
+scikit-learn
+
 # Jupyter
 jupyterlab
 # ipykernel: kernel Python para os notebooks

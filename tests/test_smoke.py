@@ -30,6 +30,16 @@ def test_numpy_scipy_pandas():
         assert spec is not None, f"{mod} não está instalado"
 
 
+def test_statsmodels_importable():
+    """statsmodels é necessário para regressão logística e análise estatística."""
+    spec = importlib.util.find_spec("statsmodels")
+    assert spec is not None, "statsmodels não está instalado"
+
+def test_sklearn_importable():
+    """scikit-learn é necessário para machine learning e métricas de apoio."""
+    spec = importlib.util.find_spec("sklearn")
+    assert spec is not None, "scikit-learn não está instalado"
+
 def test_project_config_loads():
     """A Config carrega com valores e tipos corretos."""
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
