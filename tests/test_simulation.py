@@ -83,6 +83,47 @@ def test_empty_allocates_nothing(cfg_tmp):
     assert out["per_seed"]["jains_fairness_index"].isna().all()  # all-zero -> NaN
 
 
+def test_three_schedulers_run_grid_and_allocate(cfg_tmp):
+    """Integração dos cards 5-7: os 3 schedulers (RR, Max C/I, PF) rodam o
+    grid real via run() (não só o factory) e alocam. Cada UE recebe
+    throughput > 0; só 'empty' dá zeros (coberto em test_empty_allocates_nothing).
+    """
+    cfg_tmp.save_results = False
+    cfg_tmp.schedulers = ["round_robin", "max_c_i", "proportional_fair"]
+    out = run(cfg_tmp)
+    per_ue = out["per_ue"]
+    per_seed = out["per_seed"]
+
+    # 2 cargas x 1 seed x 3 schedulers
+    assert set(per_ue["scheduler"].unique()) == {
+        "round_robin",
+        "max_c_i",
+        "proportional_fair",
+    }
+    assert len(per_seed) == 6
+
+    for sched in ["round_robin", "max_c_i", "proportional_fair"]:
+        sub = per_ue[per_ue["scheduler"] == sched]
+        assert (sub["throughput_bps"] > 0).all(), f"{sched} não alocou"
+        assert (sub["slots_allocated"] > 0).all(), f"{sched} sem slots"
+        jfi = per_seed.loc[per_seed["scheduler"] == sched, "jains_fairness_index"]
+        assert not jfi.isna().all(), f"{sched} com JFI NaN (sem alocação)"
+
+    # RR: ciclo perfeito (card 2) => cada UE recebe exatamente N_TTI / N slots
+    rr = per_ue[per_ue["scheduler"] == "round_robin"]
+    for carga, grp in rr.groupby("carga"):
+        n = int(carga)
+        assert (grp["slots_allocated"] == cfg_tmp.num_ttis // n).all()
+
+    # Max C/I: total agregado >= RR (argmax por TTI domina o ciclo; card 3)
+    agg = per_seed.groupby("scheduler")["throughput_aggregate_bps"].sum()
+    assert agg["max_c_i"] > agg["round_robin"]
+
+    # card 6: resultados distintos entre as políticas (JFI não idênticos)
+    jfi = per_seed.groupby("scheduler")["jains_fairness_index"].mean()
+    assert len(set(jfi.round(6))) >= 2
+
+
 def test_determinism_same_seed(cfg_tmp):
     cfg_tmp.save_results = False
     a = run(cfg_tmp)["per_ue"]

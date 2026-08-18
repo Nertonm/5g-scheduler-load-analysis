@@ -35,7 +35,7 @@ via fatoração \( F_{\beta,\lambda} \), mas **não são o mesmo parâmetro**.
 - A varredura de robustez usa a família axiomática de Chiang com \( \beta \in (-\infty, 1] \),
   pontos típicos: −3, −2, −1 (Jain), 0, 0,5.
 - O α-fairness (utilidade) é tratado em análise separada e declarada, **não** misturado com β.
-- NÃO usar β ∈ (1, 3) como "aversão crescente": inválido no domínio de Chiang.
+- não usar β ∈ (1, 3) como "aversão crescente": inválido no domínio de Chiang.
 
 ### Procedimento
 
@@ -75,7 +75,7 @@ ganho_total = ganho_de_diversidade (seleção do melhor) + ganho_de_média
 2. Estimar o contrafactual "sem diversidade" usando o **RR simulado do próprio
    experimento** (alocação round-robin pura = ausência de oportunismo). Isso evita
    computação redundante, amarra a decomposição aos dados já coletados e é o baseline
-   teoricamente correto. NÃO usar "seleção aleatória sobre a média do canal", que
+   teoricamente correto. Não usar "seleção aleatória sobre a média do canal", que
    mistura dois conceitos (ausência de seleção oportunística + suavização estatística).
 3. A diferença é o ganho de diversidade; o resto é ganho de média.
 4. Comparar a razão observada com a prevista pela teoria (Ban et al. confirma esse comportamento

@@ -148,7 +148,7 @@ def run(
     cargas: list[int] | None = None,
     seeds: list[int] | None = None,
 ) -> dict[str, pd.DataFrame]:
-    """Executa o grid (card 1: scheduler vazio).
+    """Executa o grid de (scheduler, carga, seed).
 
     Retorna dict com 'per_ue' (concatenado), 'per_seed', 'summary' e 'cdf'.
     Se cfg.save_results, grava em cfg.results_dir:
@@ -161,12 +161,14 @@ def run(
     loads = cargas if cargas is not None else cfg.user_counts
     run_seeds = seeds if seeds is not None else list(range(cfg.num_seeds))
 
-    # Card 1 só implementa o scheduler vazio. Rejeitar nomes reais evita
-    # gerar CSVs round_robin__... com zeros que pareceriam resultado.
+    # Aceita os quatro schedulers implementados em src/schedulers.py (cards
+    # 2-4): empty, round_robin, max_c_i e proportional_fair. Rejeita apenas
+    # nomes desconhecidos, para não gravar CSV de uma política inexistente.
+    known = {"empty", "round_robin", "max_c_i", "proportional_fair"}
     for name in names:
-        if name not in ["empty", "max_c_i"]:
+        if name not in known:
             raise NotImplementedError(
-                f"scheduler {name!r} não implementado no card 3; use 'max_c_i' ou 'empty'."
+                f"scheduler {name!r} não implementado; use um dos nomes do config."
             )
 
     started = time.time()
@@ -183,7 +185,7 @@ def run(
     done = 0
 
     # Canal uma vez por (carga, seed): todos os schedulers rodam sobre o
-    # MESMO tensor, garantindo pareamento perfeito para o t-pareado do
+    # mesmo tensor, garantindo pareamento perfeito para o t-pareado do
     # card 8 e para delta_jfi_relative_to_rr.
     for carga in loads:
         for seed in run_seeds:
