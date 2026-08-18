@@ -1,0 +1,3 @@
+scheduler,carga,seed,ue_id,throughput_bps,slots_allocated,prbs_allocated
+round_robin,2,7,0,27301112.222281266,5000,260000
+round_robin,2,7,1,27213289.875727843,5000,260000

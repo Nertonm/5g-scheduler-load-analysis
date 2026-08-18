@@ -1,0 +1,9 @@
+scheduler,carga,seed,ue_id,throughput_bps,slots_allocated,prbs_allocated
+proportional_fair,8,18,0,10690245.494921874,1251,65052
+proportional_fair,8,18,1,10730974.048828125,1263,65676
+proportional_fair,8,18,2,10676777.33359375,1251,65052
+proportional_fair,8,18,3,10656809.971875,1248,64896
+proportional_fair,8,18,4,10531711.380078126,1245,64740
+proportional_fair,8,18,5,10671126.0078125,1245,64740
+proportional_fair,8,18,6,10574313.8703125,1238,64376
+proportional_fair,8,18,7,10709069.464453125,1259,65468

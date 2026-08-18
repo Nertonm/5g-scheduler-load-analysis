@@ -1,0 +1,5 @@
+scheduler,carga,seed,ue_id,throughput_bps,slots_allocated,prbs_allocated
+max_c_i,4,6,0,19499412.878710937,2453,127556
+max_c_i,4,6,1,20065713.6203125,2520,131040
+max_c_i,4,6,2,20026948.46796875,2518,130936
+max_c_i,4,6,3,19934392.18828125,2509,130468
