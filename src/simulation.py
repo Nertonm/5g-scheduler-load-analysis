@@ -38,8 +38,7 @@ from .config import Config, load_config
 from .schedulers import create_scheduler
 
 
-# Scheduler vazio (card 1), embutido aqui para não invadir o escopo dos
-# cards 2-4. Os schedulers reais virão em src/schedulers.py.
+# Scheduler vazio
 class EmptyScheduler:
     """Não aloca nada: select sempre -1, update no-op.
 
