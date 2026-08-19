@@ -13,9 +13,9 @@ Este documento descreve o schema dos arquivos gerados em `results/` pela rotina 
 
 ---
 
-## 1) `results/per_ue/*.csv`
+## 1) Histórico: `results/legado/per_ue/*.csv`
 
-Arquivo por cenário: `per_ue/<scheduler>__cargaN__seedM.csv`
+Arquivo histórico por cenário: `results/legado/per_ue/<scheduler>__cargaN__seedM.csv`
 
 Cada linha representa um usuário `ue_id` em um cenário específico `(scheduler, carga, seed)`. O dado bruto é a acumulação de throughput por UE ao longo dos TTIs.
 
@@ -37,7 +37,7 @@ Observações:
 
 ---
 
-## 2) `results/results_per_seed.csv`
+## 2) `results/legado/results_per_seed.csv`
 
 Arquivo agregado por cenário `(scheduler, carga, seed)`.
 
@@ -61,7 +61,7 @@ Observações:
 
 ---
 
-## 3) `results/results_summary.csv`
+## 3) `results/legado/results_summary.csv`
 
 Arquivo de resumo estatístico por `(scheduler, carga)`, agregando as amostras de seed. A unidade amostral é a `seed`.
 
@@ -83,7 +83,7 @@ Observações:
 
 ---
 
-## 4) `results/cdf_throughput.csv`
+## 4) `results/legado/cdf_throughput.csv`
 
 Arquivo empírico de distribuição cumulativa de throughput por UE, organizado por `(scheduler, carga)`.
 
@@ -102,7 +102,7 @@ Observações:
 
 ---
 
-## 5) `results/manifest.json`
+## 5) `results/legado/manifest.json`
 
 Arquivo de metadados e reprodutibilidade. Não é um CSV, mas é parte do conjunto de outputs e deve acompanhar o resultado experimental.
 
@@ -130,3 +130,111 @@ Os dados exportados seguem um desenho em três camadas:
 4. `manifest.json`: reprodutibilidade e contexto de execução.
 
 Essa estrutura foi concebida para apoiar tanto a análise quantitativa dos cards 8-9 quanto a redação do relatório do card 11.
+
+
+---
+
+## 6) Path loss log-distance (cena heterogenea near/far)
+
+O schema dos CSV **nao muda** quando o path loss esta habilitado: a rotina
+gera os mesmos `per_ue.csv`, `results_per_seed.csv`, `results_summary.csv`,
+`cdf_throughput.csv` e `manifest.json`. A diferenca esta **no canal** que
+alimenta as metricas: o vetor `h` e escalado por UE.
+
+Parametros de cena (em `src/config.py`):
+
+| Campo | Default | Efeito |
+|-------|---------|--------|
+| `enable_pathloss` | `False` | `False` (decisao do Card 1): SNR media identica entre UEs. `True`: aplica path loss log-distance por posicao de UE. |
+| `pathloss_alpha` | `3.0` | Expoente de perda (alpha do modelo `P(d)=P0*(d0/d)^alpha`; redes sem fio: 2 a 4). |
+| `pathloss_d0_m` | `10.0` | Distancia de referencia (m) do modelo log-distance. |
+| `pathloss_radius_m` | `500.0` | Raio da celula (m) usado para posicionar os UEs no disco. |
+
+As posicoes dos UEs sao deterministicas da seed (`positions_from_seed` em
+`src/channel.py`): mesma seed -> mesma geometria. O canal com path loss usa
+`generate_channel_with_pathloss` em `src/channel.py`.
+
+> O default segue com path loss **desligado** (Card 1: SNR homogenea). O
+> gerador canônico `scripts/estudo_consolidado.py` percorre tanto o braço
+> homogêneo quanto os braços log-distance pareados por seed.
+## 7) CSVs dos estudos de injustica (results/estudo_*.csv)
+
+> O `results/legado/manifest.json` (secao 5) e o receipt do **card 1** (pipeline base)
+> e esta **LEGADO**: descreve o smoke grid (16 TTIs/1 seed) e nao cobre os
+> estudos de injustica. O receipt dos estudos e `results/manifest-estudos.json`
+> (secao 7.4), gerado por `make receipt` com fingerprint do candidate. Nao use
+> `manifest.json` para documentar os estudos de 50 seeds.
+
+A fonte canônica dos estudos é `results/estudo_per_seed.csv`: uma linha por
+`(sched, carga, pathloss, alpha, seed)` e a mesma grade de seeds em todos os
+braços sem/com path loss. `results/estudo_consolidado.csv` é derivado dele e
+agrega **todas** as métricas com média, desvio e IC95. Os arquivos
+`estudo_expandido.csv` e `estudo_robusto.csv` permanecem apenas como materiais
+históricos de auditoria, não como saída final.
+
+As métricas `starv_p95` e `starv_max` são gaps internos observados: não incluem
+UEs nunca/uma vez atendidos nem as bordas do horizonte. Interpretá-las junto de
+`nunca`; elas não são latência máxima censurada.
+
+### 7.1 Histórico: `results/legado/estudo_expandido.csv`
+
+Media sobre **50 seeds**, 7 cenarios (homogeneo + log-distance alpha
+1.5/2.0/2.5/3.0/3.5/4.0), cargas [2,4,8,16,32], 10.000 TTIs. Colunas:
+
+| Coluna | Descricao |
+|--------|-----------|
+| `sched` | `RR`, `MaxCI` ou `PF` |
+| `carga` | numero de UEs (2, 4, 8, 16, 32) |
+| `pathloss` | `False` (homogeneo) ou `True` (log-distance) |
+| `alpha` | expoente de perda do log-distance (NaN no homogeneo) |
+| `jfi_slots` | Jain sobre a fracao de slots por UE (justica de tempo) |
+| `jfi_throughput` | Jain sobre o throughput acumulado por UE (justica de vazao) |
+| `jfi_win` | Jain por sliding window (justica de curto prazo) |
+| `starv_p95` | percentil 95 dos gaps entre alocacoes (so UEs com >=2 alocacoes) |
+| `starv_max` | maior gap entre alocacoes de um mesmo UE |
+| `thr_5pct` | 5o percentil da vazao media por UE (bit/s; soma de taxas / T) |
+| `nunca_mean` / `nunca_max` | media/maximo de UEs sem nenhuma alocacao (por seed) |
+
+### 7.1b `results/legado/estudo_robusto.csv`
+
+Mesma estrutura (50 seeds, 7 cenarios, 10.000 TTIs), porem **sem** `starv_max`
+nem `thr_5pct`. Colunas: `sched`, `carga`, `pathloss`, `alpha`, `jfi_slots`,
+`jfi_slots_std`, `jfi_slots_ci95`, `jfi_throughput`, `jfi_throughput_ci95`,
+`jfi_win`, `starv_p95`, `nunca_mean`, `nunca_max`. IC95 = 1.96*std/sqrt(n).
+
+### 7.1 Fonte canônica: `results/estudo_per_seed.csv`
+
+Dados por seed do estudo canônico, gerado exclusivamente por
+`scripts/estudo_consolidado.py`: uma linha por `(sched, carga, cenário, seed)`
+contendo JFI slots/vazão/janela, Gini slots/vazão, todos os `j_beta_*`, gaps
+observados, vazão p5, exclusão e vetores por UE. É a única entrada para
+comparação pareada, bootstrap e resumos.
+
+### 7.1d Resumo canônico: `results/estudo_consolidado.csv`
+
+Uma linha por `(sched, carga, pathloss, alpha)`, derivada somente do per-seed.
+Para cada métrica escalar há colunas `_mean`, `_std` e `_ci95`, além de
+`seed_count`. Assim os braços homogêneo e log-distance usam exatamente as
+mesmas métricas e a mesma população de seeds.
+
+> `jfi_slots` e `jfi_throughput` sao metricas distintas: sob heterogeneidade
+> near/far, tempo igual (RR) nao garante vazao igual. Reportar ambas.
+
+### 7.2 `results/estudo_umi_nlos.csv`
+
+Corrida **ilustrativa** UMi NLOS (TR 38.901 eq 7.4-7), **1 seed de posicao por
+carga** (nao media). Usa `generate_channel` (Rayleigh do pipeline) + sqrt(gamma)
+na amplitude + `compute_rates`. Nao validar quantitativamente o cenario
+principal; somente mostrar o comportamento.
+
+### 7.3 `results/estudo_hetero_4x.csv`
+
+Corrida isolada (seed 0) com N=8 e UE0 dominante (path loss fixo 4x). Mostra o
+dominador; nao media sobre seeds.
+
+### 7.4 `results/manifest-estudos.json`
+
+Receipt experimental: para **cada arquivo**, seu protocolo (corrida, taxa,
+canal, cenarios, num_ttis), SHA-256, numero de linhas e git_commit. Gerado por
+`scripts/write_manifest.py`. Observar que cada CSV declara o proprio numero de
+seeds (o global nao existe mais - auditoria).

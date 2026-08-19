@@ -16,6 +16,10 @@
 | Luana Teles | [papel] |
 | Thiago Nerton | [papel] |
 | Vitória Pontes | [papel] |
+| Alex Reis | Integrante adicionado após o checkpoint |
+| Victor Cleyton | Integrante adicionado após o checkpoint |
+
+Equipe final com seis integrantes, incluindo Alex Reis e Victor Cleyton, incorporados após o checkpoint.
 
 ---
 
