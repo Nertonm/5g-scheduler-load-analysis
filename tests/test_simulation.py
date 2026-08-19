@@ -18,6 +18,7 @@ from src.simulation import (
 
 @pytest.fixture()
 def cfg_tmp(tmp_path):
+    """Config minimo: 200 TTIs, 1 seed, scheduler vazio, CSV em tmp_path."""
     return Config(
         num_ttis=200,
         num_seeds=1,
@@ -31,12 +32,14 @@ def cfg_tmp(tmp_path):
 
 
 def test_loop_empty_smoke(cfg_tmp):
+    """Pipeline completo roda com scheduler vazio (card 1)."""
     out = run(cfg_tmp)
     assert "per_ue" in out and "per_seed" in out and "summary" in out
     assert len(out["per_seed"]) == 2  # 2 cargas x 1 seed x 1 scheduler
 
 
 def test_per_ue_csv_schema(cfg_tmp):
+    """Schema do per_ue: colunas fixas e cardinalidade N x seeds."""
     run(cfg_tmp)
     import os
 
@@ -55,6 +58,7 @@ def test_per_ue_csv_schema(cfg_tmp):
 
 
 def test_per_seed_csv_schema(cfg_tmp):
+    """Schema do per_seed: uma linha por (scheduler, carga, seed)."""
     run(cfg_tmp)
     import os
 
@@ -75,6 +79,7 @@ def test_per_seed_csv_schema(cfg_tmp):
 
 
 def test_empty_allocates_nothing(cfg_tmp):
+    """EmptyScheduler: throughput 0 e JFI NaN (guard all-zero)."""
     out = run(cfg_tmp)
     per_ue = out["per_ue"]
     assert (per_ue["throughput_bps"] == 0.0).all()
@@ -125,6 +130,7 @@ def test_three_schedulers_run_grid_and_allocate(cfg_tmp):
 
 
 def test_determinism_same_seed(cfg_tmp):
+    """Mesma seed -> mesmos resultados bit a bit (CPU)."""
     cfg_tmp.save_results = False
     a = run(cfg_tmp)["per_ue"]
     b = run(cfg_tmp)["per_ue"]
@@ -132,6 +138,7 @@ def test_determinism_same_seed(cfg_tmp):
 
 
 def test_seed_changes_channel():
+    """Seeds distintas -> canais e resultados distintos."""
     cfg = Config(
         num_ttis=64, num_seeds=1, user_counts=[4], schedulers=["empty"],
         save_results=False,
@@ -152,6 +159,7 @@ def test_seed_changes_channel():
 
 
 def test_jfi_math():
+    """Oráculos do JFI: igualdade=1, [1,0,0]->1/3, all-zero->NaN."""
     assert jains_fairness_index([1, 1, 1]) == 1.0
     assert abs(jains_fairness_index([1, 0, 0]) - 1.0 / 3.0) < 1e-12
     assert np.isnan(jains_fairness_index([0, 0, 0]))
@@ -171,6 +179,7 @@ def test_throughput_formula():
 
 
 def test_atomic_write_cleanup(cfg_tmp):
+    """Escrita atomica nao deixa .tmp para tras (os.replace)."""
     run(cfg_tmp)
     import glob
 
@@ -178,6 +187,7 @@ def test_atomic_write_cleanup(cfg_tmp):
 
 
 def test_write_atomic(tmp_path):
+    """write_csv_atomic grava e o conteudo lido bate com o DataFrame."""
     df = pd.DataFrame({"a": [1, 2]})
     p = tmp_path / "x.csv"
     write_csv_atomic(str(p), df)

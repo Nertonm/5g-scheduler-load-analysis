@@ -33,7 +33,7 @@ from dataclasses import asdict
 import numpy as np
 import pandas as pd
 
-from .channel import compute_rates, generate_channel
+from .channel import compute_rates, channel_for_cfg
 from .config import Config, load_config
 from .schedulers import create_scheduler
 
@@ -52,9 +52,17 @@ class EmptyScheduler:
         self.num_ues = num_ues
 
     def select(self, tti: int, rates: np.ndarray) -> int:
+        """Sempre -1: nenhum UE e escalonado (scheduler vazio do card 1).
+
+        Returns
+        -------
+        int
+            -1, indicando que nenhum UE recebeu o recurso neste TTI.
+        """
         return -1
 
     def update(self, tti: int, ue: int, rate: float) -> None:
+        """No-op: como nada foi alocado em select(), nao ha historico a atualizar."""
         return None
 
 
@@ -189,7 +197,7 @@ def run(
     # card 8 e para delta_jfi_relative_to_rr.
     for carga in loads:
         for seed in run_seeds:
-            real = generate_channel(seed=seed, num_ues=carga, num_ttis=cfg.num_ttis)
+            real = channel_for_cfg(cfg, seed, carga, cfg.num_ttis)
             rates = compute_rates(cfg, real.h)  # [T, N] float64
 
             for name in names:

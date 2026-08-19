@@ -152,11 +152,99 @@ def compute_rates(cfg: Config, h: np.ndarray) -> np.ndarray:
     return cfg.occupied_bandwidth_hz * se
 
 
-def collect_snr_for_config(cfg: Config, seed: int, num_ues: int) -> ChannelRealization:
+def positions_from_seed(seed: int, num_ues: int, radius_m: float = 500.0) -> np.ndarray:
+    """Posicoes deterministica dos UEs (x, y) no disco de raio ``radius_m``.
+
+    Semeadas por ``seed``: mesma seed -> mesma geometria (reprodutivel).
+    Amostragem uniforme no disco via r = R*sqrt(u), theta ~ U(0, 2pi).
+    Retorna [num_ues, 2] com (x, y).
+    """
+    prng = np.random.default_rng(1000 + seed)
+    r = radius_m * np.sqrt(prng.uniform(0.0, 1.0, num_ues))
+    th = prng.uniform(0.0, 2.0 * np.pi, num_ues)
+    return np.stack([r * np.cos(th), r * np.sin(th)], axis=1)
+
+
+def log_distance_gain(distance_m: np.ndarray, alpha: float, d0_m: float = 10.0) -> np.ndarray:
+    """Ganho relativo de potencia por path loss log-distance.
+
+    Modelo da disciplina de redes sem fio:  P(d) = P0 * (d0/d)^alpha  (alpha 2 a 4;
+    2=espaco livre, 3-4 urbano denso). ``distance_m`` plano da celula; d0 a
+    distancia de referencia (evita divisao por zero e singularidade na origem).
+    """
+    d = np.maximum(np.asarray(distance_m, dtype=np.float64), d0_m)
+    return (d0_m / d) ** float(alpha)
+
+
+def apply_pathloss(h: np.ndarray, positions: np.ndarray, alpha: float, d0_m: float = 10.0) -> np.ndarray:
+    """Aplica path loss log-distance ao canal, por UE.
+
+    h: [num_ttis, num_ues] complex64 (canal Rayleigh do Sionna).
+    positions: [num_ues, 2] (x, y) dos UEs, com a BS na origem.
+    Retorna h escalado: cada UE k recebe o ganho sqrt(gamma_k), com
+    gamma_k = (d0/d_k)^alpha (o canal é multiplicado por raiz do ganho de
+    potencia; a SNR media de cada UE fica proporcional a gamma_k,
+    heterogenea entre UEs por distancia - a fonte da injustica do Max C/I).
+    """
+    d = np.sqrt((positions ** 2).sum(axis=1))  # [num_ues] distancia 2D ao gNB
+    gamma = log_distance_gain(d, alpha, d0_m)
+    # normaliza para SNR media ~= 1 em media (nao muda a ordenacao entre UEs)
+    gamma = gamma / gamma.mean()
+    # cast do fator para o dtype de h (complex64) evita promocao para complex128
+    factor = np.sqrt(gamma).astype(h.dtype, copy=False)
+    return h * factor[None, :]
+
+
+def generate_channel_with_pathloss(
+    seed: int, num_ues: int, num_ttis: int, alpha: float,
+    *, radius_m: float = 500.0, d0_m: float = 10.0,
+    precision: str = "single", device: str | None = None,
+) -> ChannelRealization:
+    """Canal Rayleigh + path loss log-distance (cena heterogenea near/far).
+
+    Gera o canal Rayleigh (como ``generate_channel``) e aplica o path loss
+    log-distance por posicao de UE (funcao ``apply_pathloss``). As posicoes
+    sao deterministicas do seed: mesma seed -> mesma geometria + mesmo canal.
+    O objeto retornado e a mesma ``ChannelRealization`` (h ja escalado).
+    As posicoes usadas ficam acessiveis via ``positions_from_seed(seed, num_ues)``.
+    """
+    real = generate_channel(seed=seed, num_ues=num_ues, num_ttis=num_ttis,
+                            precision=precision, device=device)
+    positions = positions_from_seed(seed, num_ues, radius_m)
+    h_scaled = apply_pathloss(real.h, positions, alpha, d0_m)
+    # ChannelRealization e dataclass frozen; reconstroi o objeto com o h escalado.
+    return ChannelRealization(h=h_scaled, tau=real.tau, seed=seed,
+                              num_ues=num_ues, num_ttis=num_ttis)
+
+
+def channel_for_cfg(cfg: Config, seed: int, num_ues: int, num_ttis: int | None = None,
+                    precision: str = "single", device: str | None = None) -> ChannelRealization:
+    """Gera o canal respeitando o Config (inclui path loss se cfg.enable_pathloss).
+
+    Ponto unico de decisao de canal para estudos: se ``cfg.enable_pathloss`` e
+    True, aplica path loss log-distance com ``cfg.pathloss_alpha`` (e d0/raio do
+    config); senao, canal Rayleigh puro. ``num_ttis`` default = cfg.num_ttis.
+    """
+    if num_ttis is None:
+        num_ttis = cfg.num_ttis
+    if cfg.enable_pathloss:
+        return generate_channel_with_pathloss(
+            seed, num_ues, num_ttis, cfg.pathloss_alpha,
+            radius_m=cfg.pathloss_radius_m, d0_m=cfg.pathloss_d0_m,
+            precision=precision, device=device,
+        )
+    return generate_channel(seed=seed, num_ues=num_ues, num_ttis=num_ttis,
+                            precision=precision, device=device)
+
+
+def collect_snr_for_config(cfg: Config, seed: int, num_ues: int, num_ttis: int | None = None) -> ChannelRealization:
     """Integração com o config: gera o canal de (seed, carga) com os
-    parâmetros do desenho. Suporta apenas 'rayleigh' no card 1."""
+    parâmetros do desenho. Delega a `channel_for_cfg`, que respeita
+    `cfg.enable_pathloss` (aplica path loss log-distance quando habilitado)
+    e `cfg.channel_model`. Suporta apenas 'rayleigh' no card 1."""
     if cfg.channel_model != "rayleigh":
         raise NotImplementedError(
             f"channel_model={cfg.channel_model!r} não suportado no card 1"
         )
-    return generate_channel(seed=seed, num_ues=num_ues, num_ttis=cfg.num_ttis)
+    return channel_for_cfg(cfg, seed, num_ues,
+                           num_ttis if num_ttis is not None else cfg.num_ttis)

@@ -15,6 +15,7 @@ from sionna.phy.channel import RayleighBlockFading
 
 
 def test_shapes_e_dtypes():
+    """Shapes/dtypes: h [T,N] complex64, tau zero (canal SISO 1 path)."""
     r = generate_channel(seed=0, num_ues=4, num_ttis=64)
     assert r.h.shape == (64, 4)
     assert r.h.dtype == np.complex64
@@ -24,18 +25,21 @@ def test_shapes_e_dtypes():
 
 
 def test_determinismo_mesma_seed():
+    """Mesma seed -> mesmo canal bit a bit (reprodutibilidade)."""
     a = generate_channel(seed=42, num_ues=8, num_ttis=128).h
     b = generate_channel(seed=42, num_ues=8, num_ttis=128).h
     assert np.array_equal(a, b)  # bit a bit em CPU
 
 
 def test_seeds_diferentes():
+    """Seeds distintas -> canais distintos (amostra independente)."""
     a = generate_channel(seed=1, num_ues=8, num_ttis=128).h
     b = generate_channel(seed=2, num_ues=8, num_ttis=128).h
     assert not np.array_equal(a, b)
 
 
 def test_distribuicao_unit_variance():
+    """Verifica CN(0,1): E|h|^2=1 e var partes real/imag = 0.5 cada."""
     r = generate_channel(seed=0, num_ues=8, num_ttis=10000)
     g = r.gains
     assert abs(g.mean() - 1.0) < 0.05  # E|h|^2 = 1 (Exp(1))
@@ -46,6 +50,7 @@ def test_distribuicao_unit_variance():
 
 
 def test_homogeneidade_entre_ues():
+    """Sem path loss, todos os UEs tem a mesma distribuicao de ganho."""
     r = generate_channel(seed=0, num_ues=16, num_ttis=10000)
     means = r.gains.mean(axis=0)
     assert np.max(means) - np.min(means) < 0.05  # mesma distribuição p/ todos
@@ -74,10 +79,12 @@ def test_torch_manual_seed_nao_controla_canal():
 
 
 def test_ruido_termico():
+    """Ruido k_B*T*B: checa o valor analitico para 18.72 MHz @ 300K."""
     assert abs(noise_power_w(18.72e6, 300.0) - 1.380649e-23 * 300.0 * 18.72e6) < 1e-20
 
 
 def test_snr_referencia_e_homogenea():
+    """SNR media por UE converge para a referencia; homogenea entre UEs."""
     cfg = load_config()
     r = generate_channel(seed=0, num_ues=4, num_ttis=10000)
     per_ue = r.mean_snr_db_per_ue(10.0)  # média linear -> dB, por UE

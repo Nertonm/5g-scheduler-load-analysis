@@ -64,6 +64,22 @@ class Config:
     # loss e Doppler que diluiriam a atribuição causal scheduler-métrica.
     channel_model: str = "rayleigh"
 
+    # enable_pathloss: aplica path loss log-distance por posicao de UE
+    # (cena heterogenea near/far). Quando False (default, decisao do Card 1),
+    # a SNR media e identica entre UEs por construcao. Quando True, usa a
+    # funcao apply_pathloss de src/channel.py.
+    enable_pathloss: bool = False
+
+    # pathloss_alpha: expoente de perda do modelo log-distance
+    #   P(d) = P0 * (d0/d)^alpha   (redes sem fio: alpha 2 a 4).
+    # 2=espaco livre, 3-4 urbano denso. So tem efeito se enable_pathloss=True.
+    pathloss_alpha: float = 3.0
+
+    # pathloss_d0_m / pathloss_radius_m: distancia de referencia (m) do modelo
+    # log-distance e raio da celula usado para posicionar os UEs.
+    pathloss_d0_m: float = 10.0
+    pathloss_radius_m: float = 500.0
+
     # bandwidth_hz: largura de banda total (Hz). 20 MHz = configuração típica
     # 5G NR band n78.
     bandwidth_hz: float = 20e6
