@@ -81,6 +81,38 @@ def jains_fairness_index(x: np.ndarray) -> float:
     return float((s * s) / (x.size * (x * x).sum()))
 
 
+def calculate_delta_jfi(per_seed_df: pd.DataFrame) -> pd.DataFrame:
+    """Calculate delta JFI relative to Round Robin for each scheduler.
+
+    For each (carga, seed) combination, computes:
+        delta_jfi_relative_to_rr = JFI(scheduler) - JFI(Round Robin)
+
+    Args:
+        per_seed_df: DataFrame with columns ['scheduler', 'carga', 'seed', 'jains_fairness_index', ...]
+
+    Returns:
+        DataFrame with an updated 'delta_jfi_relative_to_rr' column
+    """
+    # Make a copy to avoid modifying the original
+    df = per_seed_df.copy()
+
+    # Extract RR JFI values for each (carga, seed) combination
+    rr_jfi = df[df['scheduler'] == 'round_robin'][['carga', 'seed', 'jains_fairness_index']].copy()
+    rr_jfi = rr_jfi.rename(columns={'jains_fairness_index': 'rr_jfi'})
+
+    # Merge RR JFI with the main dataframe
+    df = df.merge(rr_jfi, on=['carga', 'seed'], how='left')
+
+    # Calculate delta JFI: JFI(scheduler) - JFI(RR)
+    # For RR itself, this will be 0 (which is correct)
+    df['delta_jfi_relative_to_rr'] = df['jains_fairness_index'] - df['rr_jfi']
+
+    # Drop the temporary column
+    df = df.drop(columns=['rr_jfi'])
+
+    return df
+
+
 # Núcleo do loop
 def run_seed_on_rates(
     cfg: Config, name: str, carga: int, seed: int, rates: np.ndarray
@@ -173,9 +205,9 @@ def run(
     # nomes desconhecidos, para não gravar CSV de uma política inexistente.
     known = {"empty", "round_robin", "max_c_i", "proportional_fair"}
     for name in names:
-        if name not in known:
+        if name not in ["empty", "round_robin", "max_c_i", "proportional_fair"]:
             raise NotImplementedError(
-                f"scheduler {name!r} não implementado; use um dos nomes do config."
+                f"scheduler {name!r} não implementado. Use 'empty', 'round_robin', 'max_c_i' ou 'proportional_fair'."
             )
 
     started = time.time()
@@ -216,6 +248,9 @@ def run(
 
     per_ue_all = pd.concat(per_ue_frames, ignore_index=True)
     per_seed = pd.DataFrame(per_seed_rows)
+
+    # Calculate delta JFI relative to Round Robin
+    per_seed = calculate_delta_jfi(per_seed)
 
     # Summary: IC 95% por (scheduler, carga); unidade amostral = seed.
     summary_rows = []
