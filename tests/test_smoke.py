@@ -55,7 +55,7 @@ def test_project_config_loads():
         "proportional_fair",
     ], "schedulers divergem do desenho"
     assert cfg.num_ttis == 10000, "TTIs divergem do desenho"
-    assert cfg.num_seeds == 20, "seeds divergem do desenho"
+    assert cfg.num_seeds == 50, "seeds divergem do desenho"
     assert cfg.is_siso is True, "cenário deve ser SISO (decisão metodológica)"
     assert cfg.link_direction == "downlink", "enlace deve ser downlink (alinhado no checkpoint)"
     assert cfg.traffic == "full_buffer", "tráfego deve ser full-buffer (alinhado no checkpoint)"

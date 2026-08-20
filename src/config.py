@@ -109,9 +109,10 @@ class Config:
     num_ttis: int = 10000
 
     # num_seeds: sementes aleatórias independentes. Cada seed gera um canal
-    # Rayleigh diferente. As 20 seeds formam a amostra para IC de 95% e testes
-    # de hipótese (unidade amostral = seed).
-    num_seeds: int = 20
+    # Rayleigh diferente. As 50 seeds formam a amostra para IC de 95% e testes
+    # de hipótese (unidade amostral = seed). Valor canônico do estudo
+    # consolidado (scripts/estudo_consolidado.py e Makefile usam --seeds 50).
+    num_seeds: int = 50
 
     # tti_duration: duração de cada TTI (segundos). 1 ms é o TTI nominal.
     tti_duration: float = 1e-3
