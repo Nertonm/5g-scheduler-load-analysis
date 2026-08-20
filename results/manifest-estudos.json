@@ -1,9 +1,9 @@
 {
   "projeto": "5g-scheduler-load-analysis",
   "receipt_gerado_por": "scripts/write_manifest.py",
-  "git_commit": "a7049adfb45c71f12cde509654255a06406e9e25",
-  "tree_fingerprint": "5f886246c13f3d69e6b226f21fa3223652237de6eb5af5d13bb1fba68875f87f",
-  "gerado_em": "2026-08-19T08:59:16",
+  "git_commit": "bed5f65cb676c8641f6c932b25163b656fa4b771",
+  "tree_fingerprint": "ca1084bea3db68695459fcf368b3021b377a80f7f0a9949b7c152649ef121ef4",
+  "gerado_em": "2026-08-20T02:16:55",
   "files": {
     "estudo_per_seed.csv": {
       "protocolo": {
