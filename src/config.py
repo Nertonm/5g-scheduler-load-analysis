@@ -1,6 +1,6 @@
 """Configuração do projeto 5G scheduler load analysis.
 
-Este módulo é a fonte única dos parâmetros do experimento. 
+Este módulo é a fonte única dos parâmetros do experimento.
 """
 
 from dataclasses import dataclass, field
@@ -11,20 +11,20 @@ from typing import Any
 class Config:
     """Parâmetros do experimento.
 
-    Cada campo corresponde a UMA decisão de desenho do experimento. 
+    Cada campo corresponde a uma decisão de desenho do experimento.
     (não há fonte externa que os sobrescreva).
     """
 
     # Topologia: 1 célula, SISO
     # num_cells=1 elimina interferência intercelular, isolando o efeito do
-    # scheduler. is_siso=True remove MIMO como fator de confusão.
-    # permitindo atribuir mudanças nas métricas apenas à política de scheduling.
+    # scheduler. is_siso=True remove MIMO como fator de confusão. Isso
+    # permite atribuir mudanças nas métricas apenas à política de scheduling.
     num_cells: int = 1
     is_siso: bool = True
 
     # cell_radius_m: raio geométrico usado para posicionar os UEs (metros).
     #
-    # DELIMITAÇÃO DO CENÁRIO: o canal base usa RayleighBlockFading sem
+    # Delimitação do cenário: o canal base usa RayleighBlockFading sem
     # path loss, shadowing ou dependência da distância gNB-UE. Portanto,
     # todos os UEs possuem a mesma distribuição de SNR média por construção:
     # cell_radius_m e a posição do UE não são fontes de heterogeneidade de
@@ -43,7 +43,7 @@ class Config:
     # carga o Max C/I cruza o limiar de justiça (JFI < 0,5).
     #
     # default_factory (e nao default direto): listas sao mutaveis; em dataclass
-    # um default mutavel seria compartilhado entre TODAS as instancias de Config.
+    # um default mutavel seria compartilhado entre todas as instancias de Config.
     # field(default_factory=lambda: [...]) cria uma lista nova por instancia.
     #
     # Progressao geometrica (dobra a cada passo) e deliberada: a diversidade
@@ -51,10 +51,10 @@ class Config:
     # pontos ficam igualmente espacados na escala log, onde a metrica e
     # aproximadamente linear. Espacamento aritmetico espremeria a alta carga.
     #
-    # CONFLITO DE DESENHO: 5 niveis geometricos sao
+    # Conflito de desenho: 5 niveis geometricos sao
     # otimos para estimar o LD50 (pergunta central) mas insuficientes para
     # modelagem formal da forma da curva (AIC/BIC arriscado com 5 pontos)
-    # Extensao possivel: adicionar  6, 12, 24, 48 se a modelagem de forma for priorizada.
+    # Extensao possivel: adicionar 6, 12, 24, 48 se a modelagem de forma for priorizada.
     user_counts: list[int] = field(default_factory=lambda: [2, 4, 8, 16, 32])
 
     # Canal: Rayleigh (RayleighBlockFading no Sionna).
@@ -64,6 +64,22 @@ class Config:
     # loss e Doppler que diluiriam a atribuição causal scheduler-métrica.
     channel_model: str = "rayleigh"
 
+    # enable_pathloss: aplica path loss log-distance por posicao de UE
+    # (cena heterogenea near/far). Quando False (default, decisao do Card 1),
+    # a SNR media e identica entre UEs por construcao. Quando True, usa a
+    # funcao apply_pathloss de src/channel.py.
+    enable_pathloss: bool = False
+
+    # pathloss_alpha: expoente de perda do modelo log-distance
+    #   P(d) = P0 * (d0/d)^alpha   (redes sem fio: alpha 2 a 4).
+    # 2=espaco livre, 3-4 urbano denso. So tem efeito se enable_pathloss=True.
+    pathloss_alpha: float = 3.0
+
+    # pathloss_d0_m / pathloss_radius_m: distancia de referencia (m) do modelo
+    # log-distance e raio da celula usado para posicionar os UEs.
+    pathloss_d0_m: float = 10.0
+    pathloss_radius_m: float = 500.0
+
     # bandwidth_hz: largura de banda total (Hz). 20 MHz = configuração típica
     # 5G NR band n78.
     bandwidth_hz: float = 20e6
@@ -71,7 +87,7 @@ class Config:
     # num_prbs: Physical Resource Blocks. 52 PRBs em 20 MHz com 30 kHz de
     # subcarrier. É a unidade de alocação que os schedulers disputam a cada TTI.
     #
-    # VALOR: 52 PRBs é decisão de desenho alinhada ao TAREFAS e ao checkpoint
+    # O valor de 52 PRBs é decisão de desenho alinhada ao TAREFAS e ao checkpoint
     # do projeto (o tutorial Scheduling do Sionna usa a mesma ordem de grandeza).
     # A TS 38.101-1, Tabela 5.3.2-1, lista 51 PRBs para 20 MHz @ 30 kHz SCS
     # (52 PRBs é a configuração de 10 MHz @ 15 kHz); a diferença de 1 PRB não

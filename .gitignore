@@ -14,17 +14,18 @@ build/
 venv/
 .venv/
 
-# Resultados (manter estrutura, ignorar dados grandes)
-results/*.csv
-results/*.json
-results/*.npy
-results/*.png
-results/*.pdf
+#results/*.csv
+#results/*.json
+#results/*.npy
+#results/*.png
+#results/*.pdf
 
 # IDE
 .vscode/
 .idea/
+results/legado/*
 
 # Sistema
 .DS_Store
 Thumbs.db
+.venv*

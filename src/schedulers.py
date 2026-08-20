@@ -144,9 +144,16 @@ class RoundRobin:
     """
     Scheduler Round Robin (RR).
 
-    A cada TTI, o recurso é atribuído ao próximo UE em ordem cíclica:
+    A cada TTI, o recurso é atribuído ao próximo UE em ordem cíclica.
+    Com TTIs chamados em sequência (0, 1, 2, ...), equivale a
+        u(t) = t mod N
+    (UE da vez recebe o recurso; o índice avança em ciclo). Mantém um
+    contador de estado (self.current) em vez de computar t mod N, para
+    não depender do valor de `tti` passado e funcionar mesmo se os TTIs
+    forem iterados fora de ordem; sob chamadas sequenciais o resultado
+    é idêntico à fórmula fechada.
 
-        UE0 → UE1 → UE2 → ... → UEn → UE0
+    Ignora o estado do canal (rates não afeta a escolha).
 
     Essa implementação segue o contrato definido em src/simulation.py:
         select(tti, rates) -> int

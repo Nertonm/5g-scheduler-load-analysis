@@ -1,0 +1,126 @@
+{
+  "projeto": "5g-scheduler-load-analysis",
+  "receipt_gerado_por": "scripts/write_manifest.py",
+  "git_commit": "a7049adfb45c71f12cde509654255a06406e9e25",
+  "tree_fingerprint": "5f886246c13f3d69e6b226f21fa3223652237de6eb5af5d13bb1fba68875f87f",
+  "gerado_em": "2026-08-19T08:59:16",
+  "files": {
+    "estudo_per_seed.csv": {
+      "protocolo": {
+        "role": "fonte de verdade",
+        "corrida": "50 seeds pareadas por scheduler, carga e cenário",
+        "cenarios": "homogêneo e log-distance alpha=1.5,2.0,2.5,3.0,3.5,4.0",
+        "cargas": [
+          2,
+          4,
+          8,
+          16,
+          32
+        ],
+        "num_ttis": 10000,
+        "metricas": "JFI slots/vazão/janela, Gini slots/vazão, J_beta, gaps observados, vazão p5, nunca, vetores por UE"
+      },
+      "rows_dados": 5250,
+      "sha256": "08a3f1623e44d7e0a055a237d5b5d4df700b550892b8ffb58095438db5493455",
+      "bytes": 2308790
+    },
+    "estudo_consolidado.csv": {
+      "protocolo": {
+        "role": "resumo canônico",
+        "fonte": "estudo_per_seed.csv",
+        "agregacao": "média, DP amostral e IC95 normal para cada métrica por scheduler/carga/cenário"
+      },
+      "rows_dados": 105,
+      "sha256": "12827c21b323f56a3b304476cc1c705781ff63c99f3991b2015857a0bc504994",
+      "bytes": 86758
+    },
+    "estudo_robustez_beta.csv": {
+      "protocolo": {
+        "role": "visão de robustez",
+        "fonte": "colunas j_beta_* de estudo_per_seed.csv, N=32",
+        "betas": [
+          -3.0,
+          -2.0,
+          -1.0,
+          0.0,
+          0.5,
+          0.9
+        ],
+        "nota": "J_beta é calculado por seed antes da média; beta=-1 recupera Jain."
+      },
+      "rows_dados": 21,
+      "sha256": "13905d189c91ec2c2ee4f8301c0cfc807b827fd49f2ab59ae215fedcb5d61774",
+      "bytes": 7177
+    },
+    "estudo_bootstrap_ic.csv": {
+      "protocolo": {
+        "role": "IC bootstrap por condição",
+        "fonte": "estudo_per_seed.csv",
+        "metodo": "B=2000, percentil 2.5-97.5 para a média de JFI slots do MaxCI"
+      },
+      "rows_dados": 35,
+      "sha256": "27c2db69e23f05a6be27dac84c414d9564ce42c2ce57ecf13b22dd3c1b417bd6",
+      "bytes": 2620
+    },
+    "estudo_ld50.csv": {
+      "protocolo": {
+        "role": "exploratório",
+        "fonte": "estudo_per_seed.csv",
+        "nota": "cruzamento exploratório sem IC; não é LD50 inferencial até bootstrap do estimador no nível seed"
+      },
+      "rows_dados": 7,
+      "sha256": "c4bbfa323688391c3b6d106a47141301d40dc48cdfda827589b137160ef2218c",
+      "bytes": 482
+    },
+    "estudo_umi_nlos.csv": {
+      "protocolo": {
+        "role": "ilustrativo",
+        "corrida": "uma seed de posição por carga, não média",
+        "nota": "contraste de heterogeneidade relativa, não link budget UMi completo"
+      },
+      "rows_dados": 5,
+      "sha256": "e252fc368dab4e0f60b63e34a7043f7fb75db241b4265de4789a7fa67f1ad7dc",
+      "bytes": 313
+    },
+    "estudo_hetero_4x.csv": {
+      "protocolo": {
+        "role": "ilustrativo",
+        "corrida": "seed 0, N=8",
+        "nota": "UE0 com amplitude 2x, portanto potência/SNR 4x"
+      },
+      "rows_dados": 8,
+      "sha256": "622966c9d303dd97b945677c603e3775ac748f200df2141c96f5d670270a244f",
+      "bytes": 58
+    }
+  },
+  "figures": {
+    "figuras/borda_exclusao.png": {
+      "sha256": "2ac6919db6dfff5580788369b3bf86d9939e781c7989196d1dab2d6f33db386d",
+      "bytes": 197395
+    },
+    "figuras/eficiencia_carga.png": {
+      "sha256": "b18a0300a380e85aa9d16597ba678764d94d92b0fc93a03c2bff35e845aee6f1",
+      "bytes": 117326
+    },
+    "figuras/jfi_cenarios.png": {
+      "sha256": "9314277465969279f6164fb308548aac4d3dc41ef76fb362448b685ca705375c",
+      "bytes": 175811
+    },
+    "figuras/maxci_alpha.png": {
+      "sha256": "115211e653c682abe747efbdeac6897828a3e6b9eb871d328c458a72bfcc3dad",
+      "bytes": 255526
+    },
+    "figuras/robustez_metricas.png": {
+      "sha256": "ba6cb245a2da1830b53f5e9573e8b3b00056cbb1c9bcf0e8743950cbef2e72ad",
+      "bytes": 74769
+    },
+    "figuras/temporalidade.png": {
+      "sha256": "72f2f80ce9004665493901abcfdd483b40e692b434b69a511149a9f89f351490",
+      "bytes": 146068
+    },
+    "figuras/tradeoff_n32.png": {
+      "sha256": "ff76c9f75c47cf532919105e0585ff37d12479dd664699ce0215321f7c9d2ce7",
+      "bytes": 64359
+    }
+  }
+}

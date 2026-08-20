@@ -33,13 +33,12 @@ from dataclasses import asdict
 import numpy as np
 import pandas as pd
 
-from .channel import compute_rates, generate_channel
+from .channel import compute_rates, channel_for_cfg
 from .config import Config, load_config
 from .schedulers import create_scheduler
 
 
-# Scheduler vazio (card 1), embutido aqui para não invadir o escopo dos
-# cards 2-4. Os schedulers reais virão em src/schedulers.py.
+# Scheduler vazio
 class EmptyScheduler:
     """Não aloca nada: select sempre -1, update no-op.
 
@@ -52,9 +51,17 @@ class EmptyScheduler:
         self.num_ues = num_ues
 
     def select(self, tti: int, rates: np.ndarray) -> int:
+        """Sempre -1: nenhum UE e escalonado (scheduler vazio do card 1).
+
+        Returns
+        -------
+        int
+            -1, indicando que nenhum UE recebeu o recurso neste TTI.
+        """
         return -1
 
     def update(self, tti: int, ue: int, rate: float) -> None:
+        """No-op: como nada foi alocado em select(), nao ha historico a atualizar."""
         return None
 
 
@@ -180,7 +187,7 @@ def run(
     cargas: list[int] | None = None,
     seeds: list[int] | None = None,
 ) -> dict[str, pd.DataFrame]:
-    """Executa o grid (card 1: scheduler vazio).
+    """Executa o grid de (scheduler, carga, seed).
 
     Retorna dict com 'per_ue' (concatenado), 'per_seed', 'summary' e 'cdf'.
     Se cfg.save_results, grava em cfg.results_dir:
@@ -193,8 +200,10 @@ def run(
     loads = cargas if cargas is not None else cfg.user_counts
     run_seeds = seeds if seeds is not None else list(range(cfg.num_seeds))
 
-    # Card 1 só implementa o scheduler vazio. Rejeitar nomes reais evita
-    # gerar CSVs round_robin__... com zeros que pareceriam resultado.
+    # Aceita os quatro schedulers implementados em src/schedulers.py (cards
+    # 2-4): empty, round_robin, max_c_i e proportional_fair. Rejeita apenas
+    # nomes desconhecidos, para não gravar CSV de uma política inexistente.
+    known = {"empty", "round_robin", "max_c_i", "proportional_fair"}
     for name in names:
         if name not in ["empty", "round_robin", "max_c_i", "proportional_fair"]:
             raise NotImplementedError(
@@ -215,11 +224,11 @@ def run(
     done = 0
 
     # Canal uma vez por (carga, seed): todos os schedulers rodam sobre o
-    # MESMO tensor, garantindo pareamento perfeito para o t-pareado do
+    # mesmo tensor, garantindo pareamento perfeito para o t-pareado do
     # card 8 e para delta_jfi_relative_to_rr.
     for carga in loads:
         for seed in run_seeds:
-            real = generate_channel(seed=seed, num_ues=carga, num_ttis=cfg.num_ttis)
+            real = channel_for_cfg(cfg, seed, carga, cfg.num_ttis)
             rates = compute_rates(cfg, real.h)  # [T, N] float64
 
             for name in names:
